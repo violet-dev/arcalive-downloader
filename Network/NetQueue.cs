@@ -14,8 +14,6 @@ namespace hsync.Network
     /// </summary>
     public class NetQueue
     {
-        public Queue<NetTask> queue = new Queue<NetTask>();
-
         SemaphoreSlim semaphore;
 
         public NetQueue(int count)
