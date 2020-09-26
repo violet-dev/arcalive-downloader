@@ -30,13 +30,6 @@ namespace hsync.Network
 
             NetTaskPass.RunOnField(ref content);
 
-            //if (content.DownloadString)
-            //    Log.Logs.Instance.Push("[NetField] Start download string... " + content.Url);
-            //else if (content.MemoryCache)
-            //    Log.Logs.Instance.Push("[NetField] Start download to memory... " + content.Url);
-            //else if (content.SaveFile)
-            //    Log.Logs.Instance.Push("[NetField] Start download file... " + content.Url + " to " + content.Filename);
-
         REDIRECTION:
 
             if (content.Cancel != null && content.Cancel.IsCancellationRequested)
@@ -307,6 +300,36 @@ namespace hsync.Network
             {
                 content.ErrorCallback?.Invoke(NetTask.NetError.Aborted);
                 return;
+            }
+
+            //
+            //  Retry
+            //
+
+            if (content.FailUrls != null && retry_count < content.FailUrls.Count)
+            {
+                content.Url = content.FailUrls[retry_count++];
+                content.RetryCallback?.Invoke(retry_count);
+
+                goto RETRY_PROCEDURE;
+            }
+
+            if (content.RetryWhenFail)
+            {
+                if (content.RetryCount > retry_count)
+                {
+                    retry_count += 1;
+
+                    content.RetryCallback?.Invoke(retry_count);
+
+                    goto RETRY_PROCEDURE;
+                }
+
+                //
+                //  Many retry
+                //
+
+                content.ErrorCallback?.Invoke(NetTask.NetError.ManyRetry);
             }
 
             content.ErrorCallback?.Invoke(NetTask.NetError.Unhandled);
